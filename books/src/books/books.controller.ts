@@ -1,6 +1,7 @@
 import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post } from '@nestjs/common';
 import { BooksService } from './books.service'
 import { Book } from "./book.interface";
+import { CreateBookDto } from "./createBookDto";
 
 @Controller('books')
 export class BooksController {
@@ -18,7 +19,12 @@ export class BooksController {
     }
 
     @Post()
-    public create(@Body() book: Book): Book {
+    public create(@Body() createBookDto: CreateBookDto): Book {
+        let book = {
+            id: null,
+            title: createBookDto.title
+        }
+
         return this.bookService.create(book);
     }
 
