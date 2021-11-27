@@ -1,19 +1,23 @@
 import { Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
-import { Book } from "./book.interface";
-
-const NOT_FOUND: number = -1;
+import { Book } from "./book.entity";
+import { InjectRepository } from "@nestjs/typeorm";
+import { DeleteResult, Repository } from "typeorm";
 
 @Injectable()
 export class BooksService {
-    private books: Array<Book> = [];
-
-    public findAll(): Array<Book> {
-        return this.books;
+    constructor(
+        @InjectRepository(Book)
+        private booksRepository: Repository<Book>
+    ) {
     }
 
-    public findOne(id: number): Book {
-        const book: Book = this.books
-            .find(book => book.id === id);
+    public async findAll(): Promise<Book[]> {
+        return this.booksRepository.find();
+    }
+
+    public async findOne(id: number): Promise<Book> {
+        const book: Book = await this.booksRepository
+            .findOne(id);
 
         if (book === null) {
             throw new NotFoundException('Book not found.');
@@ -22,27 +26,25 @@ export class BooksService {
         return book;
     }
 
-    public create(book: Book): Book {
-        const titleExists: boolean = this.books
-            .some(item => item.title === book.title);
+    public async create(book: Book): Promise<Book> {
+        const bookExists: Book = await this.booksRepository
+            .findOne({title: book.title});
 
-        if (titleExists) {
+        if (bookExists != null) {
             throw new UnprocessableEntityException('Book title already exists.');
         }
 
-        book.id = this.books.length;
-        this.books.push(book);
-        return book;
+        return await this.booksRepository.save(book);
     }
 
-    public delete(id: number): void {
-        const index: number = this.books
-            .findIndex(book => book.id === id);
+    public async delete(id: string): Promise<DeleteResult> {
+        const bookExists: Book = await this.booksRepository
+            .findOne(id);
 
-        if (index === NOT_FOUND) {
+        if (bookExists == null) {
             throw new NotFoundException('Book not found.');
         }
 
-        this.books.splice(index, 1);
+        return await this.booksRepository.delete(id);
     }
 }
